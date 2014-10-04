@@ -1,0 +1,20 @@
+<script src="http://js.leapmotion.com/leap-0.6.2.js"></script>
+<script src="http://js.leapmotion.com/leap-plugins-0.1.7.js"></script>
+<script lang="js">
+var cats = {};
+var num_pointed = 0;
+Leap.loop(function(frame) {
+    num_pointed = 0;
+    frame.fingers.forEach(function(finger, index) {
+        if (finger.extended) {
+            num_pointed++;
+        }
+    });
+    document.getElementById('num_fingers').innerText = num_pointed;
+});
+
+</script>
+
+<div id="num_fingers">
+0
+</div>
