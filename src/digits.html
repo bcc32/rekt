@@ -1,20 +1,62 @@
 <script src="http://js.leapmotion.com/leap-0.6.2.js"></script>
 <script src="http://js.leapmotion.com/leap-plugins-0.1.7.js"></script>
 <script lang="js">
-var cats = {};
-var num_pointed = 0;
+
+var alphabet = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
+    'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V',
+    'W', 'X', 'Y', 'Z', 0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+
+var alphabet_flags = [];
+for (i = 0; i < 26; i++) {
+    alphabet_flags[i] = [false, false, false, false, false];
+}
+
+alphabet_flags[alphabet_flags.length] = [true, false, false, false, false];
+alphabet_flags[alphabet_flags.length] = [false, true, false, false, false];
+alphabet_flags[alphabet_flags.length] = [false, true, true, false, false];
+alphabet_flags[alphabet_flags.length] = [true, true, true, false, false];
+alphabet_flags[alphabet_flags.length] = [false, true, true, true, true];
+alphabet_flags[alphabet_flags.length] = [true, true, true, true, true];
+alphabet_flags[alphabet_flags.length] = [false, true, true, true, false];
+alphabet_flags[alphabet_flags.length] = [false, true, true, false, true];
+alphabet_flags[alphabet_flags.length] = [false, true, false, true, true];
+alphabet_flags[alphabet_flags.length] = [false, false, true, true, true];
+
+function get_digit(fingers) {
+    flags = [false, false, false, false, false];
+    fingers.forEach(function(finger, index) {
+        flags[finger.type] = finger.extended;
+    });
+
+    console.log(flags);
+    for (j = 0; j < alphabet_flags.length; j++) {
+        var matches = 0;
+        for (i = 0; i < 5; i++) {
+            if (flags[i] == alphabet_flags[j][i]) matches++;
+        }
+        if (matches == 5) {
+            return alphabet[j];
+        }
+    }
+    return ' ';
+}
+
+var num_fingers;
 Leap.loop(function(frame) {
-    num_pointed = 0;
-    frame.fingers.forEach(function(finger, index) {
+    num_fingers = 0;
+    var fingers = frame.fingers;
+    fingers.forEach(function (finger, index) {
         if (finger.extended) {
-            num_pointed++;
+            num_fingers++;
         }
     });
-    document.getElementById('num_fingers').innerText = num_pointed;
+    document.getElementById('output').innerText = get_digit(fingers);
+    console.log(get_digit(fingers));
+    console.log("extended fingers: " + num_fingers)
 });
 
 </script>
 
-<div id="num_fingers">
+<div id="output">
 0
 </div>
