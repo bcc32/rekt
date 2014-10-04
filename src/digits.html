@@ -2,14 +2,9 @@
 <script src="http://js.leapmotion.com/leap-plugins-0.1.7.js"></script>
 <script lang="js">
 
-var alphabet = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
-    'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V',
-    'W', 'X', 'Y', 'Z', 0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+var alphabet = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 
 var alphabet_flags = [];
-for (i = 0; i < 26; i++) {
-    alphabet_flags[i] = [false, false, false, false, false];
-}
 
 alphabet_flags[alphabet_flags.length] = [true, false, false, false, false];
 alphabet_flags[alphabet_flags.length] = [false, true, false, false, false];
@@ -28,35 +23,67 @@ function get_digit(fingers) {
         flags[finger.type] = finger.extended;
     });
 
-    console.log(flags);
-    for (j = 0; j < alphabet_flags.length; j++) {
+    for (j = 0, l = alphabet_flags.length; j < l; j++) {
         var matches = 0;
         for (i = 0; i < 5; i++) {
-            if (flags[i] == alphabet_flags[j][i]) matches++;
+            if (flags[i] == alphabet_flags[j][i]) {
+                matches++;
+            }
         }
         if (matches == 5) {
-            return alphabet[j];
+            return j;
         }
     }
-    return ' ';
+    return -1;
 }
 
-var num_fingers;
-Leap.loop(function(frame) {
-    num_fingers = 0;
-    var fingers = frame.fingers;
-    fingers.forEach(function (finger, index) {
-        if (finger.extended) {
-            num_fingers++;
+var alphabet_size = alphabet.length;
+var lastID = 0;
+var freq = [];
+
+var find_best = function() {
+    var max_freq = 0;
+    var best_match = -1;
+    for (i = 0; i < alphabet_size; i++) {
+        if (freq[i] > max_freq) {
+            max_freq = freq[i];
+            best_match = i;
         }
-    });
-    document.getElementById('output').innerText = get_digit(fingers);
-    console.log(get_digit(fingers));
-    console.log("extended fingers: " + num_fingers)
+    }
+    return best_match;
+}
+
+var clear_freq = function() {
+    for (i = 0; i < alphabet_size; i++) {
+        freq[i] = 0;
+    }
+}
+
+var update = function() {
+    best_match = find_best();
+    if (best_match != -1) {
+        document.getElementById('box').innerText += alphabet[best_match];
+    }
+    lastID = controller.frame().id;
+    console.log(lastID + " " + alphabet[best_match]);
+    clear_freq();
+}
+
+var controller = new Leap.Controller();
+
+controller.on('connect', function() {
+    lastID = controller.frame().id;
+    clear_freq();
+    setInterval(update, 1000);
 });
+
+controller.on('frame', function(frame) {
+    ++freq[get_digit(frame.fingers)];
+});
+
+controller.connect();
 
 </script>
 
-<div id="output">
-0
+<div id="box" style="font-size: 24;">
 </div>
