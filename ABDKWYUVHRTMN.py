@@ -1,52 +1,67 @@
 import os, sys, inspect, thread, time, math
+
 src_dir = os.path.dirname(inspect.getfile(inspect.currentframe()))
 arch_dir = '../lib/x64' if sys.maxsize > 2**32 else '../lib/x86'
 sys.path.insert(0, os.path.abspath(os.path.join(src_dir, arch_dir)))
 
 import Leap
-from Leap import CircleGesture, KeyTapGesture, ScreenTapGesture, SwipeGesture
 
-class myListener(Leap.Listener):
-	finger_names = ['Thumb', 'Index', 'Middle', 'Ring', 'Pinky']
-	
-	def on_init(self, controller):
-		print "Initialized"
-	def on_connect(self, controller):
-		print "Connected"
-	def on_disconnect(self, controller):
-		print "Disconnected"
+controller = Leap.Controller()
 
-	def on_frame(self, controller):
+def read_letter(frame_count=5):
+	read = lambda : digest_frames(read_letter0(frame_count))
+	letter = digest_frames(read_letter0(frame_count))
+	while letter == None:
+		letter = read()
+	return letter
+
+def digest_frames(frames):
+	counts = map(lambda x: (frames.count(x), x), frames)
+	countmap = {}
+	for (count, x) in counts:
+		if not count in countmap:
+			countmap[count] = [x]
+		elif not x in countmap[count]:
+			countmap[count] += [x]
+	mode = countmap[max(counts)[0]]
+	if len(mode) != 1 or mode[0] == None or mode[0] == '':
+		return None
+	else:
+		return mode[0]
+
+def read_letter0(frame_count):
+	frames = []
+	lastID = -1
+	while len(frames) < frame_count:
 		frame = controller.frame()
-		print frame, 
-		for hand in frame.hands:
-			handType = "Left hand" if hand.is_left else "Right hand"
-			palm = hand.palm_position
+		if frame.id != lastID:
+			lastID = frame.id
+			frames += map(hand2letter, frame.hands)
+	return frames
 
-			letter = [0] * 5
-			for finger in hand.fingers:
-				bone = finger.bone(3)
-				distance = palm.distance_to(bone.next_joint)
-				print "  %s finger at (%s)\n" % (self.finger_names[finger.type()], distance),
-				if distance > 70: #MAGIC FUCKING NUMBER
-					letter[finger.type()] = 1
 
-			if letter == [1,0,0,0,0]:
-				print 'A'
-			if letter == [1,1,1,1,1]:
-				print 'B'
-			if letter == [0,1,0,0,0]:
-				print 'D'
-			if letter == [0,0,1,1,1]:
-				print 'K'
-			if letter == [0,1,1,1,0]:
-				print 'W'
-			if letter == [1,0,0,0,1]:
-				print 'Y'
-			if letter == [0,1,1,0,0]:
-				print findUVRH(hand)
-			if letter == [0,0,0,0,0]:
-				print findMNT(hand)
+def hand2letter(hand):
+	handType = "Left hand" if hand.is_left else "Right hand"
+	palm = hand.palm_position
+
+	letter = map(lambda finger: 1 if palm.distance_to(finger.bone(3).next_joint) > 70 else 0, hand.fingers)
+
+	if letter == [1,0,0,0,0]:
+		return 'A'
+	elif letter == [1,1,1,1,1]:
+		return 'B'
+	elif letter == [0,1,0,0,0]:
+		return 'D'
+	elif letter == [0,0,1,1,1]:
+		return 'K'
+	elif letter == [0,1,1,1,0]:
+		return 'W'
+	elif letter == [1,0,0,0,1]:
+		return 'Y'
+	elif letter == [0,1,1,0,0]:
+		return findUVRH(hand)
+	elif letter == [0,0,0,0,0]:
+		return findMNT(hand)	
 
 def findUVRH(hand):
 	finger1 = 0
@@ -59,8 +74,8 @@ def findUVRH(hand):
 
 	dir1 = finger1.bone(3).next_joint - hand.palm_position
 	dir2 = finger2.bone(3).next_joint - hand.palm_position
-	angle = math.acos(dir1.dot(dir2)/(dir1.magnitude*dir2.magnitude))
-	angle = angle/math.pi*180
+	angle = toDeg(dir1.angle_to(dir2))#math.acos(dir1.dot(dir2)/(dir1.magnitude*dir2.magnitude))
+	#angle = angle/math.pi*180
 
 	if angle > 20 and hand.palm_normal.z < 0:
 		return 'V'
@@ -72,6 +87,9 @@ def findUVRH(hand):
 		return 'H'
 	else:
 		return ''
+
+def toDeg(rad):
+	return rad/math.pi*180
 
 def findMNT(hand):
 	finger1 = 0
@@ -92,9 +110,9 @@ def findMNT(hand):
 	bone2 = finger2.bone(1).direction
 	bone3 = finger3.bone(1).direction
 	bone4 = finger4.bone(1).direction
-	angle1 = math.acos(bone1.dot(bone2)/(bone1.magnitude*bone2.magnitude))/math.pi*180
-	angle2 = math.acos(bone2.dot(bone3)/(bone2.magnitude*bone3.magnitude))/math.pi*180
-	angle3 = math.acos(bone3.dot(bone4)/(bone3.magnitude*bone4.magnitude))/math.pi*180
+	angle1 = toDeg(bone1.angle_to(bone2))
+	angle2 = toDeg(bone2.angle_to(bone3))
+	angle3 = toDeg(bone3.angle_to(bone4))
 	if angle1 > 6:
 		return 'T'
 	elif angle2 > 6:
@@ -106,15 +124,11 @@ def findMNT(hand):
 
 
 def main():
-	listener = myListener()
 	controller = Leap.Controller()
 
-	controller.add_listener(listener)
-	print "Press Enter to quit..."
-	try:
-		sys.stdin.readline()
-	except KeyboardInterrupt:
-		pass
+	while True:
+		time.sleep(0.5)
+		print read_letter()
 
 if __name__ == "__main__":
     main()

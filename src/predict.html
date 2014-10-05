@@ -1,0 +1,44 @@
+<p>Word frequency data from <a href="ftp://ftp.itri.bton.ac.uk/bnc/all.num.o5">ftp://ftp.itri.bton.ac.uk/bnc/all.num.o5</a></p>
+
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+
+<script type="text/javascript">
+function complete_words() {
+    var words = $( '#text_box' ).val().split(' ');
+    window.new_words = [];
+    for (i = 0, l = words.length; i < l; i++) {
+        var word = words[i];
+        $.ajax('http://a2z.scripts.mit.edu/rekt/predict.php',
+        {
+            type: "POST",
+            data: {'word': word},
+            dataType: 'json',
+        }).done( function( data, stat, xhr ) {
+            alert(data.comp);
+            window.new_words[data.orig] = data.comp;
+        }).fail( function( xhr, stat, err ) {
+            alert("Failed: " + xhr.responseText);
+        });
+    }
+};
+
+$(document).ajaxStop( function () {
+    var words = $( '#text_box' ).val().split(' ');
+    $( '#text_box' ).val(words.map( function(word) {
+        if (word in window.new_words) {
+            return window.new_words[word];
+        } else {
+            return word;
+        }
+    }).join(' '));
+});
+
+$(document).ready( function () {
+    $( '#complete_button' ).click( function () {
+        complete_words();
+    });
+});
+</script>
+
+<textarea id="text_box" name="word">Enter text here.</textarea>
+<input id="complete_button" type="submit" value="Complete" />
