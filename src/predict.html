@@ -14,10 +14,9 @@ function complete_words() {
             data: {'word': word},
             dataType: 'json',
         }).done( function( data, stat, xhr ) {
-            alert(data.comp);
             window.new_words[data.orig] = data.comp;
         }).fail( function( xhr, stat, err ) {
-            alert("Failed: " + xhr.responseText);
+            //
         });
     }
 };
