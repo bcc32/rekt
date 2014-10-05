@@ -1,13 +1,31 @@
 <?php
+function mismatches($a, $b) {
+    $num = 0;
+    $la = strlen($a);
+    $lb = strlen($b);
+    for ($i = 0; $i < $la and $i < $lb; $i++) {
+        if ($a[$i] != $b[$i]) {
+            $num++;
+        }
+    }
+    return $num;
+}
+
 function cmp($a, $b) {
-    $ca = count($a);
-    $cb = count($b);
-    if ($ca == $cb) {
-        return 0;
+    $ca = strlen($a);
+    $ma = mismatches($a, $GLOBALS['word']);
+    $cb = strlen($b);
+    $mb = mismatches($b, $GLOBALS['word']);
+    if ($ma < $mb) {
+        return -1;
+    } else if ($ma > $mb) {
+        return 1;
     } else if ($ca < $cb) {
         return -1;
-    } else {
+    } else if ($ca > $cb) {
         return 1;
+    } else {
+        return 0;
     }
 }
 
@@ -38,11 +56,8 @@ if (strlen($word) > 0) {
     }
     $ans = 'teapot';
     usort($matches, 'cmp');
-
     if (count($matches) == 0) {
         header($_SERVER['SERVER_PROTOCOL'] . ' 418 I\'m a teapot');
-    } else if (array_search($word, $matches)) {
-        $ans = $word;
     } else {
         $ans = $matches[0];
     }
@@ -53,11 +68,12 @@ if (strlen($word) > 0) {
         $ans = ucwords($ans);
     }
 
-    $ans = preg_replace('/' . preg_quote($word, '/') . '/', $ans, $orig);
+    $ans = str_ireplace($word, $ans, $orig);
 
-    $response = ['orig' => $orig, 'comp' => $ans ];
+    $response = ['orig' => $orig, 'word' => $word, 'comp' => $ans ];
     print json_encode($response);
 } else {
     header($_SERVER['SERVER_PROTOCOL'] . ' 204 No Content');
 }
+fclose($dict);
 ?>
