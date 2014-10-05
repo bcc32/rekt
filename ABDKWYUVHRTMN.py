@@ -6,6 +6,12 @@ sys.path.insert(0, os.path.abspath(os.path.join(src_dir, arch_dir)))
 
 import Leap
 
+"""
+	Please Note:
+	All magic numbers in this file are based off measurements 
+	from Loc's hands. 
+"""
+
 controller = Leap.Controller()
 
 def read_letter(frame_count=5):
@@ -44,26 +50,33 @@ def hand2letter(hand):
 	handType = "Left hand" if hand.is_left else "Right hand"
 	palm = hand.palm_position
 
-	letter = map(lambda finger: 1 if palm.distance_to(finger.bone(3).next_joint) > 70 else 0, hand.fingers)
+	letter = map(lambda finger: 1 if palm.distance_to(finger.tip_position) > 70 else 0, hand.fingers)
 
 	if letter == [1,0,0,0,0]:
-		return 'A'
+		print 'A'
 	elif letter == [1,1,1,1,1]:
-		return 'B'
+		print 'B'
 	elif letter == [0,1,0,0,0]:
-		return 'D'
+		print findDX(hand)
 	elif letter == [0,0,1,1,1]:
-		return 'K'
+		print 'F'
 	elif letter == [0,1,1,1,0]:
-		return 'W'
+		print 'W'
 	elif letter == [1,0,0,0,1]:
-		return 'Y'
+		print 'Y'
 	elif letter == [0,1,1,0,0]:
-		return findUVRH(hand)
+		print findUVRHKP(hand)
+	elif letter == [0,0,0,0,1]:
+		print findIJ(hand)
+	elif letter == [1,1,0,0,0]:
+		print findGLZQ(hand)
 	elif letter == [0,0,0,0,0]:
-		return findMNT(hand)	
+		return findMNT(hand)		
 
-def findUVRH(hand):
+def toDeg(rad):
+	return rad/math.pi*180
+
+def findUVRHKP(hand):
 	finger1 = 0
 	finger2 = 0
 	for finger in hand.fingers:
@@ -72,24 +85,65 @@ def findUVRH(hand):
 		elif finger.type() == 2:
 			finger2 = finger
 
-	dir1 = finger1.bone(3).next_joint - hand.palm_position
-	dir2 = finger2.bone(3).next_joint - hand.palm_position
-	angle = toDeg(dir1.angle_to(dir2))#math.acos(dir1.dot(dir2)/(dir1.magnitude*dir2.magnitude))
-	#angle = angle/math.pi*180
+	dir1 = finger1.tip_position - hand.palm_position
+	dir2 = finger2.tip_position - hand.palm_position
+	angle = toDeg(dir1.angle_to(dir2))
 
-	if angle > 20 and hand.palm_normal.z < 0:
+	if angle > 40 and hand.palm_normal.y < 0:
+		return 'P'
+	elif angle > 40:
+		return 'K'
+	elif angle > 20 and hand.palm_normal.y < 0:
 		return 'V'
-	elif angle > 7.5 and hand.palm_normal.z < 0:
+	elif angle > 7.5 and hand.palm_normal.y < 0:
 		return 'U'
-	elif angle < 7.5 and hand.palm_normal.z < 0:
+	elif angle < 7.5 and hand.palm_normal.y < 0:
 		return 'R'
-	elif hand.palm_normal.z > 0:
+	elif hand.palm_normal.y > 0:
 		return 'H'
 	else:
 		return ''
 
-def toDeg(rad):
-	return rad/math.pi*180
+def findIJ(hand):
+	if hand.palm_normal.y > 0:
+		return 'J'
+	else:
+		return 'I'
+
+def findGLZQ(hand):
+	finger1 = 0
+	finger2 = 0
+	for finger in hand.fingers:
+		if finger.type() == 1:
+			finger1 = finger
+		elif finger.type() == 2:
+			finger2 = finger
+
+	length = finger1.bone(3).prev_joint.distance_to(finger2.bone(3).prev_joint)
+
+	if length > 70:
+		return 'L'
+	if length > 60:
+		return 'Z'
+	if length > 45:
+		return 'G'
+	if length < 45:
+		return 'Q'
+	else:
+		return ''
+
+def findDX(hand):
+	finger1 = 0
+	for finger in hand.fingers:
+		if finger.type() == 1:
+			finger1 = finger
+	bone1 = finger1.bone(1).direction
+	bone2 = finger1.bone(2).direction
+	angle = toDeg(bone1.angle_to(bone2))
+	if angle > 30:
+		return 'X'
+	else:
+		return 'D'
 
 def findMNT(hand):
 	finger1 = 0
@@ -98,30 +152,27 @@ def findMNT(hand):
 	finger4 = 0
 	for finger in hand.fingers:
 		if finger.type() == 1:
-			finger1=finger
+			finger1 = finger
 		elif finger.type() == 2:
-			finger2=finger
+			finger2 = finger
 		elif finger.type() == 3:
-			finger3=finger
+			finger3 = finger
 		elif finger.type() == 4:
-			finger4=finger
+			finger4 = finger
 
 	bone1 = finger1.bone(1).direction
 	bone2 = finger2.bone(1).direction
 	bone3 = finger3.bone(1).direction
 	bone4 = finger4.bone(1).direction
-	angle1 = toDeg(bone1.angle_to(bone2))
-	angle2 = toDeg(bone2.angle_to(bone3))
-	angle3 = toDeg(bone3.angle_to(bone4))
-	if angle1 > 6:
+
+	if toDeg(bone1.angle_to(bone2)) > 7:
 		return 'T'
-	elif angle2 > 6:
+	elif toDeg(bone2.angle_to(bone3)) > 5:
 		return 'N'
-	elif angle3 > 5:
+	elif toDeg(bone3.angle_to(bone4)) > 4:
 		return 'M'
 	else:
 		return ''
-
 
 def main():
 	controller = Leap.Controller()
