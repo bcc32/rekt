@@ -31,7 +31,7 @@ function cmp($a, $b) {
 
 require dirname(__FILE__) . '/errors.php';
 header('Access-Control-Allow-Origin: http://web.mit.edu');
-$file_name = dirname(__FILE__) . '/../../www/rekt/data/cleaned_up.txt';
+$file_name = dirname(__FILE__) . '/../../www/rekt/data/wordlist';
 $dict = fopen($file_name, 'r');
 $orig = $_REQUEST["word"];
 $word = strtolower($orig);
