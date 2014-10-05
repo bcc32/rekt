@@ -27,13 +27,13 @@ class myListener(Leap.Listener):
 				bone = finger.bone(3)
 				distance = palm.distance_to(bone.next_joint)
 				"""print "  %s finger at (%s)\n" % (self.finger_names[finger.type()], distance),"""
-				if distance > 65: #MAGIC FUCKING NUMBER
+				if distance > 68: #MAGIC FUCKING NUMBER
 					letter[finger.type()] = 1
 
 			if letter == [1,0,0,0,0]:
 				print 'A'
 			if letter == [1,1,1,1,1]:
-				print 'B'
+				print findBC(hand)
 			if letter == [0,1,0,0,0]:
 				print findDX(hand)
 			if letter == [0,0,1,1,1]:
@@ -48,6 +48,51 @@ class myListener(Leap.Listener):
 				print findIJ(hand)
 			if letter == [1,1,0,0,0]:
 				print findGLZQ(hand)
+			if letter == [0,0,0,0,0]:
+				print findTMN(hand)
+
+def findBC(hand):
+	myList = []
+	for finger in hand.fingers:
+		myList.append(finger)
+
+	sum = 0
+	for i in range(len(myList)-1):
+		length = (myList[i].bone(3).next_joint-myList[i+1].bone(3).next_joint).magnitude
+		sum += length
+
+	if sum/5 > 30:
+		return 'B'
+	if sum/5 > 22:
+		return 'C'
+
+def findTMN(hand):
+	index = 0
+	middle = 0
+	ring = 0
+	pinky = 0
+	for finger in hand.fingers:
+		if finger.type() == 1:
+			index = finger
+		if finger.type() == 2:
+			middle = finger
+		if finger.type() == 3:
+			ring = finger
+		if finger.type() == 4:
+			pinky = finger
+	angle = math.acos(index.bone(1).next_joint.dot(middle.bone(1).next_joint)/(index.bone(1).next_joint.magnitude*middle.bone(1).next_joint.magnitude))/math.pi*180
+	angle2 = math.acos(middle.bone(1).next_joint.dot(ring.bone(1).next_joint)/(middle.bone(1).next_joint.magnitude*ring.bone(1).next_joint.magnitude))/math.pi*180
+	angle3 = math.acos(ring.bone(1).next_joint.dot(pinky.bone(1).next_joint)/(ring.bone(1).next_joint.magnitude*pinky.bone(1).next_joint.magnitude))/math.pi*180
+
+	if angle > 11:
+		return 'T'
+	elif angle2 > 9:
+		return 'N'
+	elif angle3 > 8:
+		return 'M'
+	else:
+		return ''
+
 
 def findUVRHKP(hand):
 	finger1 = 0
@@ -122,7 +167,7 @@ def findDX(hand):
 def main():
 	listener = myListener()
 	controller = Leap.Controller()
-
+	controller.enable_gesture(Leap.Gesture.TYPE_SWIPE)
 	controller.add_listener(listener)
 
 	print "Press Enter to quit..."

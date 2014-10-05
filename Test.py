@@ -23,17 +23,10 @@ class myListener(Leap.Listener):
 			handType = "Left hand" if hand.is_left else "Right hand"
 			palm = hand.palm_position
 
-			finger1 = 0
 			for finger in hand.fingers:
-				if finger.type() == 1:
-					finger1 = finger
-			bone1 = finger1.bone(1).direction
-			bone2 = finger1.bone(2).direction
-			print math.acos(bone1.dot(bone2)/(bone1.magnitude*bone2.magnitude))/math.pi*180
-
-
-
-
+				bone = finger.bone(3)
+				distance = palm.distance_to(bone.next_joint)
+				print "  %s finger at (%s)\n" % (self.finger_names[finger.type()], distance),
 
 
 def main():
